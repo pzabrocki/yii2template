@@ -3,7 +3,7 @@
 * http://github.com/RobinHerbots/jquery.inputmask
 * Copyright (c) 2010 - 2014 Robin Herbots
 * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php)
-* Version: 3.1.36
+* Version: 3.1.37
 */
 !function(factory) {
     "function" == typeof define && define.amd ? define([ "jquery" ], factory) : factory(jQuery);
@@ -879,8 +879,8 @@
                         writeBuffer(input, buffer))));
                     }
                 }).bind("focus.inputmask", function() {
-                    var $input = $(this), input = this, nptValue = input._valueGet();
-                    opts.showMaskOnFocus && !$input.is(":focus") && (!opts.showMaskOnHover || opts.showMaskOnHover && "" == nptValue) && input._valueGet() != getBuffer().join("") && writeBuffer(input, getBuffer(), seekNext(getLastValidPosition())), 
+                    var input = ($(this), this), nptValue = input._valueGet();
+                    opts.showMaskOnFocus && (!opts.showMaskOnHover || opts.showMaskOnHover && "" == nptValue) && input._valueGet() != getBuffer().join("") && writeBuffer(input, getBuffer(), seekNext(getLastValidPosition())), 
                     valueOnFocus = getBuffer().join("");
                 }).bind("mouseleave.inputmask", function() {
                     var $input = $(this), input = this;
@@ -1026,7 +1026,7 @@
                 repeat: 0,
                 greedy: !0,
                 autoUnmask: !1,
-                removeMaskOnSubmit: !0,
+                removeMaskOnSubmit: !1,
                 clearMaskOnLostFocus: !0,
                 insertMode: !0,
                 clearIncomplete: !1,

@@ -65,7 +65,7 @@ class SiteController extends Controller
         }
 
         $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+        if ($model->load(Yii::$app->request->post()) && $model->loginAdmin()) { // loginAdmin() method checks if user has at least admin role and is active.
             return $this->goBack();
         } else {
             return $this->render('login', [

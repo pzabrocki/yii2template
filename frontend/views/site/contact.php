@@ -8,10 +8,10 @@ use yii\captcha\Captcha;
 /* @var $model \frontend\models\ContactForm */
 
 $this->title = 'Contact';
-$this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title; //We use the params method to send the breadcrumb parameter to the layout file(frontend\views\layouts\main.php), which calls it via the Breadcrumbs widget, so it appears at the top of the page.
 ?>
 <div class="site-contact">
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h1><?= Html::encode($this->title) ?></h1> <!-- So in our h1, we are echoing the title, within the Html::encode method. This will convert special characters into html entities. This is why we need to declare: use yii\helpers\Html; -->
 
     <p>
         If you have business inquiries or other questions, please fill out the following form to contact us. Thank you.

@@ -5,11 +5,13 @@ use Yii;
 use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
+use yii\db\Expression;
 use yii\web\IdentityInterface;
 use backend\models\Role; // gives access to our Role model
 use backend\models\Status; // gives access to our Role model
 use backend\models\UserType; // gives access to our UserType model
 use frontend\models\Profile;
+use yii\helpers\Security;
 use yii\helpers\Arrayhelper;
 use yii\helpers\Url;
 use Yii\helpers\Html;
@@ -23,9 +25,9 @@ use Yii\helpers\Html;
  * @property string $password_reset_token
  * @property string $email
  * @property string $auth_key
- * @property integer $role_id
- * @property integer $status_id
- * @property integer $user_type_id
+ * @property integer $role
+ * @property integer $status
+ * @property integer $user_type
  * @property integer $created_at
  * @property integer $updated_at
  * @property string $password write-only password
@@ -53,7 +55,7 @@ class User extends ActiveRecord implements IdentityInterface
     {
         return [
             'timestamp' => [
-                'class' => 'yii/behaviors/TimestampBehavior',
+                'class' => TimestampBehavior::className(),
                 'attributes' => [
                 ActiveRecord::EVENT_BEFORE_INSERT => ['created_at', 'updated_at'],
                 ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
@@ -69,14 +71,14 @@ class User extends ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
-            ['status_id', 'default', 'value' => self::STATUS_ACTIVE],
-            ['status_id', 'in', 'range'=>array_keys($this->getStatusList())], // accept status_id values that are in range of the values in the status_value field in the status table. The array keys are the status_value records.
+            ['status', 'default', 'value' => self::STATUS_ACTIVE],
+            ['status', 'in', 'range'=>array_keys($this->getStatusList())], // accept status values that are in range of the values in the status_value field in the status table. The array keys are the status_value records.
             
-            ['role_id', 'default', 'value' => self::ROLE_USER],
-            ['role_id', 'in', 'range'=>array_keys($this->getRoleList())], // accept role_id values that are in range of the values in the role_value field in the role table.
+            ['role', 'default', 'value' => self::ROLE_USER],
+            ['role', 'in', 'range'=>array_keys($this->getRoleList())], // accept role values that are in range of the values in the role_value field in the role table.
             
-            ['user_type_id', 'default', 'value' => self::USER_TYPE],
-            ['user_type_id', 'in', 'range'=>array_keys($this->getUserTypeList())], 
+            ['user_type', 'default', 'value' => self::USER_TYPE],
+            ['user_type', 'in', 'range'=>array_keys($this->getUserTypeList())], 
             
             ['username', 'filter', 'filter' => 'trim'],
             ['username', 'required'],
@@ -113,7 +115,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentity($id)
     {
-        return static::findOne(['id' => $id, 'status_id' => self::STATUS_ACTIVE]);
+        return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
     }
 
     /**
@@ -132,7 +134,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findByUsername($username)
     {
-        return static::findOne(['username' => $username, 'status_id' => self::STATUS_ACTIVE]);
+        return static::findOne(['username' => $username, 'status' => self::STATUS_ACTIVE]);
     }
 
     /**
@@ -149,7 +151,7 @@ class User extends ActiveRecord implements IdentityInterface
 
         return static::findOne([
             'password_reset_token' => $token,
-            'status_id' => self::STATUS_ACTIVE,
+            'status' => self::STATUS_ACTIVE,
         ]);
     }
 
@@ -244,9 +246,9 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getRole() 
     {
-        return $this->hasOne(Role::className(), ['role_value' => 'role_id']);
+        return $this->hasOne(Role::className(), ['role_value' => 'role']);
         // Users only have one role, so it's hasOne relationship. 
-        // role_value on the role table is mapped to role_id in the user table (opposite to getUsers in Role model)
+        // role_value on the role table is mapped to role in the user table (opposite to getUsers in Role model)
     }
     
     /**
@@ -262,7 +264,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function getRoleList()
     {
-        $droptions = Role::find()->asArray->all();
+        $droptions = Role::find()->all(); // not working: Role::find()->asArray->all();
         return Arrayhelper::map($droptions, 'role_value', 'role_name');
     }
     
@@ -271,9 +273,9 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getStatus() 
     {
-        return $this->hasOne(Status::className(), ['status_value' => 'status_id']);
+        return $this->hasOne(Status::className(), ['status_value' => 'status']);
         // Users only have one status, so it's hasOne relationship. 
-        // status_value on the status table is mapped to status_id in the user table (opposite to getUsers in Status model)
+        // status_value on the status table is mapped to status in the user table (opposite to getUsers in Status model)
     }
     
     /**
@@ -289,7 +291,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function getStatusList()
     {
-        $droptions = Status::find()->asArray->all();
+        $droptions = Status::find()->all();
         return Arrayhelper::map($droptions, 'status_value', 'status_name');
     }
     
@@ -299,7 +301,9 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getUserType() 
     {
-        return $this->hasOne(UserType::className(), ['user_type_value' => 'user_type_id']);
+        return $this->hasOne(UserType::className(), ['user_type_value' => 'user_type']);
+        // Users only have one user_type, so it's hasOne relationship. 
+        // user_type_value on the status table is mapped to user_type in the user table
     }
     
     /**
@@ -315,7 +319,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function getUserTypeList()
     {
-        $droptions = UserType::find()->asArray->all();
+        $droptions = UserType::find()->all();
         return Arrayhelper::map($droptions, 'user_type_value', 'user_type_name');
     }
     
@@ -333,6 +337,8 @@ class User extends ActiveRecord implements IdentityInterface
     public function getProfile()
     {
         return $this->hasOne(Profile::className(), ['user_id' => 'id']);
+        // Users only have one profile, so it's hasOne relationship. 
+        // user_id on the profile table is mapped to id in the user table
     }
     
     /**

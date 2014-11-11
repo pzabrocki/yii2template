@@ -3,7 +3,7 @@
 * http://github.com/RobinHerbots/jquery.inputmask
 * Copyright (c) 2010 - 2014 Robin Herbots
 * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php)
-* Version: 3.1.36
+* Version: 3.1.37
 */
 !function(factory) {
     "function" == typeof define && define.amd ? define([ "jquery", "./jquery.inputmask" ], factory) : factory(jQuery);
@@ -14,9 +14,10 @@
                 if (0 !== opts.repeat && isNaN(opts.integerDigits) && (opts.integerDigits = opts.repeat), 
                 opts.repeat = 0, opts.groupSeparator == opts.radixPoint && (opts.groupSeparator = "." == opts.radixPoint ? "," : "," == opts.radixPoint ? "." : ""), 
                 " " === opts.groupSeparator && (opts.skipOptionalPartCharacter = void 0), opts.autoGroup = opts.autoGroup && "" != opts.groupSeparator, 
-                opts.autoGroup && isFinite(opts.integerDigits)) {
+                opts.autoGroup && ("string" == typeof opts.groupSize && isFinite(opts.groupSize) && (opts.groupSize = parseInt(opts.groupSize)), 
+                isFinite(opts.integerDigits))) {
                     var seps = Math.floor(opts.integerDigits / opts.groupSize), mod = opts.integerDigits % opts.groupSize;
-                    opts.integerDigits += 0 == mod ? seps - 1 : seps;
+                    opts.integerDigits = parseInt(opts.integerDigits) + (0 == mod ? seps - 1 : seps);
                 }
                 opts.definitions[";"] = opts.definitions["~"];
                 var mask = opts.prefix;
@@ -68,18 +69,7 @@
                 };
             },
             onKeyDown: function(e, buffer, caretPos, opts) {
-                if (e.keyCode == $.inputmask.keyCode.TAB && "0" != opts.placeholder.charAt(0)) {
-                    var radixPosition = $.inArray(opts.radixPoint, buffer);
-                    if (-1 != radixPosition && isFinite(opts.digits)) {
-                        for (var i = 1; i <= opts.digits; i++) (void 0 == buffer[radixPosition + i] || buffer[radixPosition + i] == opts.placeholder.charAt(0)) && (buffer[radixPosition + i] = "0");
-                        return {
-                            refreshFromBuffer: {
-                                start: ++radixPosition,
-                                end: radixPosition + opts.digits
-                            }
-                        };
-                    }
-                } else if (opts.autoGroup && (e.keyCode == $.inputmask.keyCode.DELETE || e.keyCode == $.inputmask.keyCode.BACKSPACE)) {
+                if (opts.autoGroup && (e.keyCode == $.inputmask.keyCode.DELETE || e.keyCode == $.inputmask.keyCode.BACKSPACE)) {
                     var rslt = opts.postFormat(buffer, caretPos - 1, !0, opts);
                     return rslt.caret = rslt.pos + 1, rslt;
                 }
@@ -93,6 +83,8 @@
             postProcessOnBlur: function(tmpBuffer, opts) {
                 var tmpBufSplit = "" != opts.radixPoint ? tmpBuffer.join("").split(opts.radixPoint) : [ tmpBuffer.join("") ], matchRslt = tmpBufSplit[0].match(opts.regex.integerPart(opts)), matchRsltDigits = 2 == tmpBufSplit.length ? tmpBufSplit[1].match(opts.regex.integerNPart(opts)) : void 0;
                 matchRslt && "-0" == matchRslt[matchRslt.index] && (void 0 == matchRsltDigits || matchRsltDigits[matchRsltDigits.index].match(/^0+$/)) && tmpBuffer.splice(0, 1);
+                var radixPosition = $.inArray(opts.radixPoint, tmpBuffer);
+                if (-1 != radixPosition && isFinite(opts.digits)) for (var i = 1; i <= opts.digits; i++) (void 0 == tmpBuffer[radixPosition + i] || tmpBuffer[radixPosition + i] == opts.placeholder.charAt(0)) && (tmpBuffer[radixPosition + i] = "0");
             },
             regex: {
                 integerPart: function() {
@@ -131,7 +123,7 @@
                         c: integerValue[0],
                         caret: radixPos + 1
                     };
-                    if (!integerValue || "0" == integerValue[0]) return maskset.buffer[integerValue ? integerValue.index : pos] = "0", 
+                    if (!integerValue || "0" == integerValue[0] && integerValue.index + 1 != pos) return maskset.buffer[integerValue ? integerValue.index : pos] = "0", 
                     {
                         pos: (integerValue ? integerValue.index : pos) + 1
                     };
